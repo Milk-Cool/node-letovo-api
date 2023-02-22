@@ -1,0 +1,19 @@
+{
+  "name": "letovo-api",
+  "version": "0.1.8",
+  "description": "A NodeJS implementation of the s.letovo.ru API.",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": [
+    "letovo",
+    "api"
+  ],
+  "files": [
+    "index.js"
+  ],
+  "author": "Milk_Cool",
+  "license": "MIT",
+  "dependencies": {
+    "node-fetch": "^2.6.7"
+  }
+}
