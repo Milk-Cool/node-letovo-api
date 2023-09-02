@@ -177,7 +177,12 @@ class Letovo {
 	};
 	resetPassword(mail){
 		return this.data(`sendresetpasscode?user_email=${encodeURI(mail)}`);
-	}
+	};
+	plan() {
+		let day = new Date();
+		day = day.toISOString().split("T")[0];
+		return this.data(`academicplan/${this.studentID}?end_date=${day}`, "GET");
+	};
 }
 
 module.exports = Letovo;
