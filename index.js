@@ -94,9 +94,10 @@ class Letovo {
 				"login": this.user,
 				"password": this.password
 			}).then(res => {
-				this.token = res.data.token_type + " " + res.data.token;
-				if(res.code == 200) this.info().then(() => resolve(this.token)).catch(res => reject(res.message));
-				else reject(res.message);
+				if(res.code == 200) {
+					this.token = res.data.token_type + " " + res.data.token;
+					this.info().then(() => resolve(this.token)).catch(res => reject(res.message));
+				} else reject(res.message);
 			});
 		});
 	};
