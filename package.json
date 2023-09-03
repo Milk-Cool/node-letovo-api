@@ -1,6 +1,6 @@
 {
   "name": "letovo-api",
-  "version": "0.1.12",
+  "version": "0.1.14",
   "description": "A NodeJS implementation of the s.letovo.ru API.",
   "main": "index.js",
   "scripts": {},
@@ -14,8 +14,8 @@
   "author": "Milk_Cool",
   "license": "MIT",
   "dependencies": {
-    "jsdom": "^22.1.0",
-    "node-fetch": "^2.6.7"
+    "node-fetch": "^2.6.7",
+    "react-native-html-parser": "^0.1.0"
   },
   "repository": {
     "type": "git",

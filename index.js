@@ -2,8 +2,7 @@
 // https://s-api.letovo.ru/api/documentation
 
 const fetch = require("node-fetch");
-const jsdom = require("jsdom");
-const { JSDOM } = jsdom;
+const { DOMParser } = require("react-native-html-parser");
 
 class Letovo {
 	// Constructor
@@ -12,6 +11,7 @@ class Letovo {
 		this.password = password;
 		this.token = "";
 		this.PHPSESSID = "";
+		this.parser = new DOMParser();
 		if(immediateAuth){
 			this.login();
 			this.loginOld();
@@ -185,15 +185,15 @@ class Letovo {
 			this.reqOld("index.php?r=student&part_student=diary&lang=eng", "GET")
 			.then(res => {
 				let o = [];
-				const dom = new JSDOM(res);
-				const document = dom.window.document;
-				for(let i of document.querySelectorAll(".panel-group > .panel.panel-default > .panel-collapse > .panel-body > .diary_day")) {
+				let document = this.parser.parseFromString(res, "text/html");
+				for(let i of Array.from(document.getElementByClassName("panel-group").childNodes).filter(x => x.attributes)) {
+					i = i.childNodes[3].childNodes[1].childNodes[1];
 					o.push([]);
-					for(let j of Array.from(i.children).filter(x => !x.children[0].classList.contains("diary_cell_head"))) {
+					for(let j of Array.from(i.childNodes).filter(x => x.attributes).filter(x => !x.childNodes[1].getAttribute("class").includes("diary_cell_head"))) {
 						o[o.length - 1].push({
-							"name": j.querySelector(".diary_subject").textContent?.trim(),
-							"task": j.querySelector(".diary_task").textContent?.trim(),
-							"link": j.querySelector(".diary_task").innerHTML?.match(/(?<=href=")[^"]+(?=")/)?.[0]
+							"name": j.childNodes[5].textContent?.trim(),
+							"task": j.childNodes[9].textContent?.trim(),
+							"link": j.childNodes[9].childNodes[1]?.childNodes[1]?.getAttribute("href")
 						});
 					}
 				}
