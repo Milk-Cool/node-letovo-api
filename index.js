@@ -4,6 +4,8 @@
 const fetch = require("node-fetch");
 const { DOMParser } = require("react-native-html-parser");
 
+const runningInReactNative = typeof navigator !== "undefined" && navigator.product === "ReactNative";
+
 class Letovo {
 	// Constructor
 	constructor(user, password, immediateAuth = false){
@@ -50,11 +52,13 @@ class Letovo {
 		const options = {
 			"method": method,
 			"headers": {
-				"Cookie": "PHPSESSID=" + this.PHPSESSID,
 				"Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
 				...headers
-			}
+			},
+			"credentials": "include"
 		};
+		if(!runningInReactNative)
+			options.headers.Cookie = "PHPSESSID=" + this.PHPSESSID;
 		if(!["get", "head"].includes(method.toLowerCase())) options.body = body;
 		return fetch("https://student.letovo.ru/" + apiMethod, options);
 	};
@@ -107,8 +111,10 @@ class Letovo {
 				"login": this.user,
 				"pass": this.password
 			});
-			const id = f.headers.get("Set-Cookie").match(/PHPSESSID=(?<id>[a-z0-9]+)/).groups.id;
-			this.PHPSESSID = id;
+			if(!runningInReactNative) {
+				const id = f.headers.get("Set-Cookie").match(/PHPSESSID=(?<id>[a-z0-9]+)/).groups.id;
+				this.PHPSESSID = id;
+			}
 			f.json().then(res => resolve(this.oldStudentID = parseInt(res.message)));
 		});
 	}
@@ -178,6 +184,7 @@ class Letovo {
 		day = day.toISOString().split("T")[0];
 		return this.data(`academicplan/${this.studentID}?end_date=${day}`, "GET");
 	};
+	// TODO: add support for selecting a date
 	homework() { // s-api.letovo.ru does not show homework from the future, so we have to make requests to student.letovo.ru and parse the HTML output
 		return new Promise(async (resolve, reject) => {
 			await this.reqOld("home", "GET");
