@@ -184,7 +184,6 @@ class Letovo {
 			const today = new Date();
 			this.reqOld("index.php?r=student&part_student=diary&lang=eng", "GET")
 			.then(res => {
-				console.log(res);
 				let o = [];
 				const dom = new JSDOM(res);
 				const document = dom.window.document;
