@@ -2,6 +2,8 @@
 // https://s-api.letovo.ru/api/documentation
 
 const fetch = require("node-fetch");
+const jsdom = require("jsdom");
+const { JSDOM } = jsdom;
 
 class Letovo {
 	// Constructor
@@ -43,13 +45,14 @@ class Letovo {
 		if(!["get", "head"].includes(method.toLowerCase())) options.body = body;
 		return fetch("https://s-api.letovo.ru/api/" + apiMethod, options);
 	};
-	fetchOld(apiMethod = "", method = "POST", body = {}){
+	fetchOld(apiMethod = "", method = "POST", body = {}, headers = {}){
 		if(typeof body != "string") body = (new URLSearchParams(body)).toString();
 		const options = {
 			"method": method,
 			"headers": {
 				"Cookie": "PHPSESSID=" + this.PHPSESSID,
-				"Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+				"Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+				...headers
 			}
 		};
 		if(!["get", "head"].includes(method.toLowerCase())) options.body = body;
@@ -69,18 +72,10 @@ class Letovo {
 			.catch(reject);
 		});
 	};
-	reqOld(apiMethod = "", method = "POST", body = {}){
-		// Sorry, I HAD to copy the whole function
+	reqOld(apiMethod = "", method = "POST", body = {}, headers = {}){
 		return new Promise((resolve, reject) => {
-			this.fetch(apiMethod, method, body)
-			.then(res => res.text()).then(res=>{
-				try {
-					res = JSON.parse(res);
-				} catch(e) {
-					res = { "error": e };
-				}
-				resolve(res);
-			})
+			this.fetchOld(apiMethod, method, body)
+			.then(res => res.text()).then(resolve)
 			.catch(reject);
 		});
 	};
@@ -182,6 +177,31 @@ class Letovo {
 		let day = new Date();
 		day = day.toISOString().split("T")[0];
 		return this.data(`academicplan/${this.studentID}?end_date=${day}`, "GET");
+	};
+	homework() { // s-api.letovo.ru does not show homework from the future, so we have to make requests to student.letovo.ru and parse the HTML output
+		return new Promise(async (resolve, reject) => {
+			await this.reqOld("home", "GET");
+			const today = new Date();
+			this.reqOld("index.php?r=student&part_student=diary&lang=eng", "GET")
+			.then(res => {
+				console.log(res);
+				let o = [];
+				const dom = new JSDOM(res);
+				const document = dom.window.document;
+				for(let i of document.querySelectorAll(".panel-group > .panel.panel-default > .panel-collapse > .panel-body > .diary_day")) {
+					o.push([]);
+					for(let j of Array.from(i.children).filter(x => !x.children[0].classList.contains("diary_cell_head"))) {
+						o[o.length - 1].push({
+							"name": j.querySelector(".diary_subject").textContent?.trim(),
+							"task": j.querySelector(".diary_task").textContent?.trim(),
+							"link": j.querySelector(".diary_task").innerHTML?.match(/(?<=href=")[^"]+(?=")/)?.[0]
+						});
+					}
+				}
+				resolve(o);
+			})
+			.catch(res => reject(res));
+		});
 	};
 }
 

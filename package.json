@@ -1,6 +1,6 @@
 {
   "name": "letovo-api",
-  "version": "0.1.9",
+  "version": "0.1.12",
   "description": "A NodeJS implementation of the s.letovo.ru API.",
   "main": "index.js",
   "scripts": {},
@@ -14,6 +14,15 @@
   "author": "Milk_Cool",
   "license": "MIT",
   "dependencies": {
+    "jsdom": "^22.1.0",
     "node-fetch": "^2.6.7"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Milk-Cool/node-letovo-api.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Milk-Cool/node-letovo-api/issues"
+  },
+  "homepage": "https://github.com/Milk-Cool/node-letovo-api#readme"
 }
