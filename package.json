@@ -1,6 +1,6 @@
 {
   "name": "letovo-api",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "description": "A NodeJS implementation of the s.letovo.ru API.",
   "main": "index.js",
   "scripts": {},
