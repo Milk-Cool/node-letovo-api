@@ -184,12 +184,17 @@ class Letovo {
 		day = day.toISOString().split("T")[0];
 		return this.data(`academicplan/${this.studentID}?end_date=${day}`, "GET");
 	};
-	// TODO: add support for selecting a date
-	homework() { // s-api.letovo.ru does not show homework from the future, so we have to make requests to student.letovo.ru and parse the HTML output
+	homework(day) { // s-api.letovo.ru does not show homework from the future, so we have to make requests to student.letovo.ru and parse the HTML output
+		console.log(day, !!day, typeof day)
+		day = day || new Date();
+		day = `${day.getDate().toString().padStart(2, "0")}.${(day.getMonth() + 1).toString().padStart(2, "0")}.${day.getFullYear()}.`;
 		return new Promise(async (resolve, reject) => {
 			await this.reqOld("home", "GET");
-			const today = new Date();
-			this.reqOld("index.php?r=student&part_student=diary&lang=eng", "GET")
+			await this.reqOld("index.php?r=student&part_student=diary&lang=eng", "GET");
+			this.reqOld("index.php", "POST", {
+				"date_report": day,
+				"absence_report": "Show"
+			})
 			.then(res => {
 				let o = [];
 				let document = this.parser.parseFromString(res, "text/html");
