@@ -162,8 +162,8 @@ class Letovo {
 	yearSchedule(day){
 		return this.schedule(day, "year");
 	};
-	diploma(){
-		return this.data(`diplomaletovo/${this.studentID}`, "GET");
+	diploma(type){
+		return this.data(`diplomaletovo/${this.studentID}${type ? "/" + type : ""}`, "GET");
 	};
 	diplomaFuture(year){
 		if(!year) year = (new Date()).getFullYear();
