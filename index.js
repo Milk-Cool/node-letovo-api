@@ -18,6 +18,7 @@ class Letovo {
 		this.elkUserID = 0;
 		this.PHPSESSID = "";
 		this.parser = new DOMParser();
+		this.userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 		if(immediateAuth){
 			this.login();
 			this.loginOld();
@@ -45,6 +46,7 @@ class Letovo {
 			"method": method,
 			"headers": {
 				"Authorization": elk ? this.elkToken : this.token,
+				"User-Agent": this.userAgent,
 				"Content-Type": "application/json;charset=UTF-8"
 			}
 		};
@@ -60,6 +62,7 @@ class Letovo {
 			"method": method,
 			"headers": {
 				"Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+				"User-Agent": this.userAgent,
 				...headers
 			},
 			"credentials": "include"
@@ -140,17 +143,16 @@ class Letovo {
 	};
 	loginOld(){
 		return new Promise(async resolve => {
-			const f = await this.fetchOld("preferences_login.php", "POST", {
-				"act": "logg",
-				"key": "1",
+			const f = await this.fetchOld("login", "POST", {
 				"login": this.user,
-				"pass": this.password
+				"password": this.password
 			});
-			if(!runningInReactNative) {
+			// if(!runningInReactNative) {
 				const id = f.headers.get("Set-Cookie").match(/PHPSESSID=(?<id>[a-z0-9]+)/).groups.id;
 				this.PHPSESSID = id;
-			}
-			f.json().then(res => resolve(this.oldStudentID = parseInt(res.message)));
+			// }
+			// f.json().then(res => resolve(this.oldStudentID = parseInt(res.message)));
+			f.json().then(res => resolve(res.code == 200));
 		});
 	}
 	/*logoutOld(){
