@@ -6,12 +6,16 @@ const { DOMParser } = require("react-native-html-parser");
 
 const runningInReactNative = typeof navigator !== "undefined" && navigator.product === "ReactNative";
 
+// TODO: rewrite to use async/await
+
 class Letovo {
 	// Constructor
 	constructor(user, password, immediateAuth = false){
 		this.user = user;
 		this.password = password;
 		this.token = "";
+		this.elkToken = "";
+		this.elkUserID = 0;
 		this.PHPSESSID = "";
 		this.parser = new DOMParser();
 		if(immediateAuth){
@@ -35,18 +39,21 @@ class Letovo {
 		return parseInt(this.decodedToken.sub);
 	};
 	// Basic req methods
-	fetch(apiMethod = "", method = "POST", body = {}){
+	fetch(apiMethod = "", method = "POST", body = {}, elk = false){
 		if(typeof body != "string") body = JSON.stringify(body);
 		const options = {
 			"method": method,
 			"headers": {
-				"Authorization": this.token,
+				"Authorization": elk ? this.elkToken : this.token,
 				"Content-Type": "application/json;charset=UTF-8"
 			}
 		};
 		if(!["get", "head"].includes(method.toLowerCase())) options.body = body;
-		return fetch("https://s-api.letovo.ru/api/" + apiMethod, options);
+		return fetch((elk ? "https://elk.letovo.ru/api/" : "https://s-api.letovo.ru/api/") + apiMethod, options);
 	};
+	fetchELK(apiMethod = "", method = "POST", body = {}){
+		return this.fetch(apiMethod, method, body, true);
+	}
 	fetchOld(apiMethod = "", method = "POST", body = {}, headers = {}){
 		if(typeof body != "string") body = (new URLSearchParams(body)).toString();
 		const options = {
@@ -62,9 +69,9 @@ class Letovo {
 		if(!["get", "head"].includes(method.toLowerCase())) options.body = body;
 		return fetch("https://student.letovo.ru/" + apiMethod, options);
 	};
-	req(apiMethod = "", method = "POST", body = {}){
+	req(apiMethod = "", method = "POST", body = {}, elk = false){
 		return new Promise((resolve, reject) => {
-			this.fetch(apiMethod, method, body)
+			this.fetch(apiMethod, method, body, elk)
 			.then(res => res.text()).then(res=>{
 				try {
 					res = JSON.parse(res);
@@ -75,6 +82,9 @@ class Letovo {
 			})
 			.catch(reject);
 		});
+	};
+	reqELK(apiMethod = "", method = "POST", body = {}){
+		return this.req(apiMethod, method, body, true);
 	};
 	reqOld(apiMethod = "", method = "POST", body = {}, headers = {}){
 		return new Promise((resolve, reject) => {
@@ -92,6 +102,31 @@ class Letovo {
 			this.req("login", "POST", {
 				"login": this.user,
 				"password": this.password
+			}).then(res => {
+				if(res.code == 200) {
+					this.token = res.data.token_type + " " + res.data.token;
+					this.info().then(() => resolve(this.token)).catch(res => reject(res.message));
+				} else reject(res.message);
+			});
+		});
+	};
+	loginWithELK(){
+		return new Promise(async (resolve, reject) => {
+			const o = await this.reqELK("login", "POST", {
+				"email": this.user + "@student.letovo.ru",
+				"password": this.password,
+				"params": []
+			});
+			this.elkToken = o.token_type + " " + o.access_token;
+			const me = await this.reqELK("me", "POST", {});
+			this.elkUserID = me.user.id;
+			const ssoCode = (await this.reqELK("oauth/access_request_from_user", "POST", {
+				"email": this.user + "@student.letovo.ru",
+				"user_id": this.elkUserID,
+				"params": { "callback": "https://s.letovo.ru/elk_oauth2", "client_id": "4" }
+			})).toRedirect.match(/(?<=\?code=)[a-zA-Z0-9]+/)[0];
+			this.req("elk-sso-request", "POST", {
+				"sso_code": ssoCode
 			}).then(res => {
 				if(res.code == 200) {
 					this.token = res.data.token_type + " " + res.data.token;
